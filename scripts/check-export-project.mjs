@@ -39,6 +39,7 @@ class FileSystemAdapter {
 	getFullPath(relative) { return path.join(root, relative); }
 }
 const notices = [], exports = [];
+const toolResults = new Map(), checkedTools = [];
 class Notice {
 	messageEl = { classList: { add() {} }, setAttribute() {} };
 	constructor(message) { notices.push(message); }
@@ -47,7 +48,7 @@ class Notice {
 }
 const generateBook = new Function("FileSystemAdapter", "TFolder", "TFile", "Notice", "t", "path", "readProjectFile", "parseYaml", "parseProject", "projectYaml", "stringifyYaml", "saveProjectFile", "excluded", "isProjectNote", "detectTool", "compareVersions", "resources", "renderCover", "confirmOverwrite", "needsFontPackage", "exportPdf", "exportDocx", "exportEpub", "projectNoteName", method("generateBook") + "return generateBook;")(
 	FileSystemAdapter, TFolder, TFile, Notice, t, path, readProjectFile, JSON.parse, parseProject, projectYaml, JSON.stringify, saveProjectFile, excluded, isProjectNote,
-	async tool => ({ state: "found", version: "3.9", path: tool }), compareVersions, {}, () => {}, () => {}, needsFontPackage,
+	async tool => { checkedTools.push(tool); return toolResults.get(tool) ?? { state: "found", version: "3.9", path: tool }; }, compareVersions, {}, () => {}, () => {}, needsFontPackage,
 	...(["pdf", "docx", "epub"].map(format => async request => { assert.equal(await needsFontPackage(request.project, request.fontDirectory), false, "Required fonts are installed before export"); exports.push({ format, request }); return request.output; })),
 	projectNoteName,
 );
@@ -59,6 +60,26 @@ for (const format of ["pdf", "docx", "epub"]) {
 	assert.equal(reads, 0, "The vault root cannot create a project or start exporting");
 	assert.equal(exports.length, 0);
 }
+for (const language of ["fr", "en"]) for (const [format, tool] of [["pdf", "pandoc"], ["docx", "pandoc"], ["epub", "pandoc"], ["pdf", "xelatex"]]) {
+	setLocale(language);
+	const program = tool === "pandoc" ? "Pandoc" : "LaTeX";
+	toolResults.set(tool, { state: "missing", message: t("programNotDetectedInstallItThenCheckAgain", { program }) });
+	const folder = new TFolder("missing-" + language + "-" + format + "-" + tool);
+	new TFile("Chapter.md", folder);
+	const directory = path.join(root, folder.path); await mkdir(directory);
+	const opened = [];
+	let reads = 0;
+	const context = { manifest: { id: "bookbinder" }, settings: { ...DEFAULT_SETTINGS }, defaultProjectData, app: { setting: { open() { opened.push("open"); }, openTabById(id) { opened.push(id); } }, vault: { adapter: new FileSystemAdapter(), async read() { reads++; return "# Manuscript"; } } } };
+	await generateBook.call(context, folder, format);
+	assert.ok(notices.at(-1).includes(language === "fr" ? `${program} n’est pas installé` : `${program} is not installed`), notices.at(-1));
+	assert.deepEqual(opened, ["open", "bookbinder"], "Missing software opens Bookbinder settings");
+	assert.equal(reads, 0, "Missing software stops before reading the manuscript");
+	assert.equal(await readProjectFile(directory), undefined, "Missing software does not create a project");
+	assert.equal(exports.length, 0);
+	assert.equal(context.exporting, false, "The user can retry after installing the software");
+	toolResults.clear();
+}
+setLocale("en");
 for (const format of ["pdf", "docx", "epub"]) for (const kind of ["file", "folder"]) {
 	const folder = new TFolder(format + "-" + kind), file = new TFile("Chapter.md", folder);
 	const directory = path.join(root, folder.path); await mkdir(directory);
@@ -137,5 +158,13 @@ await generateBook.call(rootContext, rootNote, "epub");
 assert.equal(exports.length, 1, notices.join("\n"));
 assert.deepEqual(exports.pop().request.sources.map(source => source.content), ["ROOT NOTE"], "A note at the vault root remains exportable");
 assert.ok(await readProjectFile(root, projectNoteName(rootNote.basename)));
+toolResults.set("xelatex", { state: "missing", message: "LaTeX is not installed." });
+for (const format of ["docx", "epub"]) {
+	checkedTools.length = 0;
+	await generateBook.call(rootContext, rootNote, format);
+	assert.equal(exports.length, 1, format + " does not require LaTeX"); exports.pop();
+	assert.deepEqual(checkedTools, ["pandoc"]);
+}
+toolResults.clear();
 assert.equal(exports.length, 0);
 console.log("Book to: automatic projects, font download before PDF/Docx/ePub, installed font reuse, download failure and retry; existing projects and manuscript preserved: OK.");

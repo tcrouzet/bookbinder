@@ -332,7 +332,7 @@
   "previewTabrule": "<section><h3>A heading</h3><p>The story comes before the tabulated text.</p><div class='bookbinder-after-heading-tab'></div><p class='tab'>The first line\twith a tab after the heading.</p><p class='tab'>Another tabulated line.</p></section>",
   "previewThirdParagraph": "She opened the window. The city was slowly waking, with the quiet that comes before an eventful day.",
   "printIsbn": "Print ISBN",
-  "programNotDetectedInstallItThenCheckAgain": "Program not detected. Install it, then check again.",
+  "programNotDetectedInstallItThenCheckAgain": "{program} is not installed.",
   "programPathNotFound": "Program not found at this location. Correct the path or restore automatic detection.",
   "projectAccessDenied": "Access denied. Check permissions for the project folder and selected files.",
   "projectChangedElsewhere": "The project was changed elsewhere. Close this window and open it again.",

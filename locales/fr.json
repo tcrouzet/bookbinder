@@ -332,7 +332,7 @@
   "previewTabrule": "<section><h3>Un titre</h3><p>Le récit précède la tabulation.</p><div class='bookbinder-after-heading-tab'></div><p class='tab'>La première ligne\tavec tabulation après le titre.</p><p class='tab'>Une autre ligne tabulée.</p></section>",
   "previewThirdParagraph": "Elle ouvrit la fenêtre. La ville s’éveillait lentement, avec ce calme particulier qui précède les grandes journées.",
   "printIsbn": "ISBN papier",
-  "programNotDetectedInstallItThenCheckAgain": "Programme non détecté. Installez-le, puis relancez la vérification.",
+  "programNotDetectedInstallItThenCheckAgain": "{program} n’est pas installé.",
   "programPathNotFound": "Programme introuvable à cet emplacement. Corrigez le chemin ou rétablissez la détection automatique.",
   "projectAccessDenied": "Accès refusé. Vérifiez les droits d’accès au dossier du projet et aux fichiers choisis.",
   "projectChangedElsewhere": "Le projet a été modifié ailleurs. Fermez cette fenêtre et ouvrez-le à nouveau.",

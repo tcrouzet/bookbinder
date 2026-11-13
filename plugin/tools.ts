@@ -124,5 +124,5 @@ export async function detectTool(tool: Tool, configuredPath = "", env = process.
 	}
 	return newest ?? failure ?? { state: "missing", message: configured
 		? t("programPathNotFound")
-		: t("programNotDetectedInstallItThenCheckAgain") };
+		: t("programNotDetectedInstallItThenCheckAgain", { program: tool === "pandoc" ? "Pandoc" : "LaTeX" }) };
 }

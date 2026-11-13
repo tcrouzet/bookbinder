@@ -104,6 +104,18 @@ export default class BookbinderPlugin extends Plugin {
 		try {
 			const adapter = this.app.vault.adapter;
 			if (!(adapter instanceof FileSystemAdapter)) throw new Error(t("exportRequiresObsidianOnDesktop"));
+			const requireTool = async (tool: "pandoc" | "xelatex", configuredPath: string) => {
+				const status = await detectTool(tool, configuredPath);
+				if (status.state !== "found") {
+					const { setting } = this.app as unknown as { setting: { open(): void; openTabById(id: string): void } };
+					setting.open(); setting.openTabById(this.manifest.id);
+					throw new Error(t("errorOpenSettingsBookbinder", { error: status.message }));
+				}
+				return status;
+			};
+			const pandoc = await requireTool("pandoc", this.settings.pandocPath);
+			if (compareVersions(pandoc.version, "3.1.1") === -1) throw new Error(t("pandocVersionRequired"));
+			const xelatex = format === "pdf" ? (await requireTool("xelatex", this.settings.latexPath)).path : "";
 			const folder = source instanceof TFolder ? source : source.parent;
 			if (!folder) throw new Error(t("theManuscriptFolderCouldNotBeFound"));
 			const directory = adapter.getFullPath(folder.path);
@@ -128,15 +140,6 @@ export default class BookbinderPlugin extends Plugin {
 			for (const file of files) {
 				const content = await this.app.vault.read(file);
 				sources.push({ path: adapter.getFullPath(file.path), content });
-			}
-			const pandoc = await detectTool("pandoc", this.settings.pandocPath);
-			if (pandoc.state !== "found") throw new Error(t("errorOpenSettingsBookbinder", { error: pandoc.message }));
-			if (compareVersions(pandoc.version, "3.1.1") === -1) throw new Error(t("pandocVersionRequired"));
-			let xelatex = "";
-			if (format === "pdf") {
-				const latex = await detectTool("xelatex", this.settings.latexPath);
-				if (latex.state !== "found") throw new Error(t("errorOpenSettingsBookbinder", { error: latex.message }));
-				xelatex = latex.path;
 			}
 			if (await needsFontPackage(project, this.fontDirectory)) {
 				notice.setMessage(t("installingFontPackage"));
